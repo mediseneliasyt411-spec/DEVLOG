@@ -1,47 +1,140 @@
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="theme-color" content="#101321">
-  <title>DEVLOG | Mi espacio de desarrollo</title>
+  <title>DEVLOG 2.0 | Developer Workspace</title>
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
   <aside class="sidebar">
-    <div class="brand"><span class="brand-mark">&lt;/&gt;</span><div><b>DEVLOG</b><small>MI ESPACIO DEV</small></div></div>
+    <h2>DEV<span>LOG</span></h2>
+    <p class="subtitle">DEVELOPER WORKSPACE</p>
+
     <nav>
-      <button class="nav active" data-view="inicio">⌂ <span>Inicio</span></button>
-      <button class="nav" data-view="proyectos">▣ <span>Mis proyectos</span></button>
-      <button class="nav" data-view="aprendizaje">⌘ <span>Aprendizaje</span></button>
-      <button class="nav" data-view="notas">▤ <span>Bitácora</span></button>
+      <button data-view="inicio">⌂ Inicio</button>
+      <button data-view="proyectos">▣ Proyectos</button>
+      <button data-view="academy">⌘ Academy</button>
+      <button data-view="tutor">⌁ Code Tutor</button>
+      <button data-view="musica">♫ Música</button>
+      <button data-view="bitacora">▤ Bitácora</button>
     </nav>
-    <div class="side-bottom"><span class="status-dot"></span> Tus datos se guardan en este dispositivo</div>
+
+    <div class="profile">
+      <div class="avatar">D</div>
+      <div>
+        <strong>Developer</strong>
+        <small>Mi espacio personal</small>
+      </div>
+    </div>
   </aside>
-  <main class="main">
-    <header><div><p class="eyebrow">PANEL PERSONAL</p><h1 id="page-title">Bienvenido a tu espacio.</h1><p class="muted">Cada línea de código cuenta. Sigue construyendo tu futuro.</p></div><div class="date-chip" id="today"></div></header>
-    <section id="view-inicio" class="view">
-      <div class="hero"><div><span class="pill">✦ TU PROGRESO, TU HISTORIA</span><h2>Piensa. Aprende.<br><em>Construye.</em></h2><p>Organiza tus ideas, registra tus avances y convierte lo que aprendes en proyectos reales.</p><button class="primary" data-go="proyectos">Explorar mis proyectos <b>↗</b></button></div><div class="hero-art"><div class="orbit orbit1"></div><div class="orbit orbit2"></div><div class="code-window"><div class="dots">● ● ● <span>main.js</span></div><code><i>const</i> futuro = {<br>&nbsp; aprender: <strong>true</strong>,<br>&nbsp; practicar: <strong>true</strong>,<br>&nbsp; rendirse: <strong>false</strong><br>};<br><br><i>while</i> (futuro.aprender) {<br>&nbsp; construir();<br>}</code></div><div class="floating-tag">0101 · DEV MODE</div></div></div>
-      <div class="stats"><article class="stat"><span>PROYECTOS ACTIVOS</span><b id="stat-projects">0</b><small>Ideas en construcción</small></article><article class="stat"><span>HABILIDADES</span><b id="stat-skills">0</b><small>En seguimiento</small></article><article class="stat"><span>NOTAS GUARDADAS</span><b id="stat-notes">0</b><small>Conocimiento acumulado</small></article><article class="stat"><span>DÍAS REGISTRADOS</span><b id="stat-days">0</b><small>En tu bitácora</small></article></div>
-      <div class="section-heading"><div><p class="eyebrow">TU ESPACIO DE TRABAJO</p><h2>Continúa donde te quedaste</h2></div></div>
-      <div class="quick-grid"><button class="quick-card" data-go="proyectos"><span>▣</span><b>Crear un proyecto</b><small>Guarda una idea y conviértela en algo real.</small><strong>＋</strong></button><button class="quick-card" data-go="aprendizaje"><span>⌘</span><b>Registrar una habilidad</b><small>Da seguimiento a los lenguajes que estudias.</small><strong>＋</strong></button><button class="quick-card" data-go="notas"><span>▤</span><b>Escribir en mi bitácora</b><small>No olvides lo que aprendiste hoy.</small><strong>＋</strong></button></div>
+
+  <main>
+    <header>
+      <div>
+        <p>YOUR DEVELOPMENT SPACE</p>
+        <h1 id="pageTitle">Bienvenido a DEVLOG</h1>
+      </div>
+      <span class="status">● Espacio local</span>
+    </header>
+
+    <section id="inicio" class="view active">
+      <div class="hero">
+        <p>DEVLOG 2.0</p>
+        <h2>Convierte tus ideas<br>en proyectos reales.</h2>
+        <p>Aprende, programa, documenta y construye tu futuro como desarrollador.</p>
+        <button onclick="showView('academy')">Comenzar a aprender →</button>
+      </div>
+
+      <h2>Resumen general</h2>
+      <div class="stats">
+        <article><small>Proyectos</small><h2 id="projectCount">0</h2></article>
+        <article><small>Tecnologías</small><h2>5</h2></article>
+        <article><small>Notas</small><h2 id="noteCount">0</h2></article>
+      </div>
+
+      <h2>Rutas disponibles</h2>
+      <div class="cards">
+        <article>☕ <h3>Java</h3><p>Programación orientada a objetos.</p></article>
+        <article>🐍 <h3>Python</h3><p>Lógica, funciones y estructuras.</p></article>
+        <article>⚙️ <h3>C++</h3><p>Memoria y programación avanzada.</p></article>
+        <article>🌐 <h3>Desarrollo web</h3><p>HTML, CSS y JavaScript.</p></article>
+      </div>
     </section>
-    <section id="view-proyectos" class="view hidden">
-      <div class="section-heading"><div><p class="eyebrow">CONSTRUYE IDEAS</p><h2>Mis proyectos</h2><p class="muted">Un lugar para organizar lo que estás creando.</p></div><button class="primary" id="add-project">＋ Nuevo proyecto</button></div>
-      <div id="project-list" class="card-grid"></div>
-      <div id="project-empty" class="empty">Todavía no hay proyectos. Agrega tu primera idea y comienza a desarrollarla.</div>
+
+    <section id="proyectos" class="view">
+      <h2>Mis proyectos</h2>
+      <p>Organiza tus ideas y trabajos de programación.</p>
+      <form id="projectForm" class="form">
+        <input id="projectName" placeholder="Nombre del proyecto" required>
+        <textarea id="projectDescription" placeholder="Descripción del proyecto"></textarea>
+        <select id="projectTech">
+          <option>Java</option>
+          <option>Python</option>
+          <option>C++</option>
+          <option>HTML / CSS / JavaScript</option>
+        </select>
+        <button>Guardar proyecto</button>
+      </form>
+      <div id="projectsList" class="cards"></div>
     </section>
-    <section id="view-aprendizaje" class="view hidden">
-      <div class="section-heading"><div><p class="eyebrow">MEJORA CONTINUA</p><h2>Mi aprendizaje</h2><p class="muted">Registra tecnologías y mide tu propio avance.</p></div><button class="primary" id="add-skill">＋ Nueva habilidad</button></div>
-      <div id="skill-list" class="skill-list"></div><div id="skill-empty" class="empty">Aún no registras habilidades. Agrega un lenguaje o tecnología que estés aprendiendo.</div>
+
+    <section id="academy" class="view">
+      <h2>DEVLOG Academy</h2>
+      <p>Selecciona una tecnología para comenzar tu aprendizaje.</p>
+      <div class="academy-grid">
+        <button onclick="loadCourse('Java')">Java</button>
+        <button onclick="loadCourse('Python')">Python</button>
+        <button onclick="loadCourse('C++')">C++</button>
+        <button onclick="loadCourse('HTML y CSS')">HTML y CSS</button>
+        <button onclick="loadCourse('JavaScript')">JavaScript</button>
+      </div>
+      <article id="courseContent" class="panel">
+        Selecciona una ruta de aprendizaje.
+      </article>
     </section>
-    <section id="view-notas" class="view hidden">
-      <div class="section-heading"><div><p class="eyebrow">APRENDER TAMBIÉN ES RECORDAR</p><h2>Mi bitácora</h2><p class="muted">Anota conceptos, errores, soluciones e ideas.</p></div><button class="primary" id="add-note">＋ Nueva nota</button></div>
-      <div id="note-list" class="note-list"></div><div id="note-empty" class="empty">Tu bitácora está vacía. Escribe qué aprendiste hoy.</div>
+
+    <section id="tutor" class="view">
+      <h2>Code Tutor</h2>
+      <p>Escribe código y recibe observaciones educativas.</p>
+      <select id="codeLanguage">
+        <option>JavaScript</option>
+        <option>Java</option>
+        <option>Python</option>
+        <option>C++</option>
+      </select>
+      <textarea id="codeEditor" class="editor" spellcheck="false" placeholder="// Escribe tu código aquí"></textarea>
+      <button onclick="reviewCode()">Revisar código</button>
+      <article id="codeResults" class="panel">
+        Esperando código...
+      </article>
     </section>
-    <footer>DEVLOG <span>·</span> Hecho para aprender creando.</footer>
+
+    <section id="musica" class="view">
+      <h2>Focus Mode</h2>
+      <p>Conecta una playlist o canción de Spotify.</p>
+      <input id="spotifyLink" placeholder="Pega aquí tu enlace de Spotify">
+      <button onclick="connectSpotify()">Conectar Spotify</button>
+      <div id="spotifyPlayer" class="panel">
+        Tu reproductor aparecerá aquí.
+      </div>
+    </section>
+
+    <section id="bitacora" class="view">
+      <h2>Bitácora de desarrollo</h2>
+      <p>Registra tus aprendizajes y avances.</p>
+      <form id="noteForm" class="form">
+        <input id="noteTitle" placeholder="Título de la nota" required>
+        <textarea id="noteBody" placeholder="¿Qué aprendiste hoy?" required></textarea>
+        <button>Guardar nota</button>
+      </form>
+      <div id="notesList"></div>
+    </section>
+
+    <footer>DEVLOG 2.0 · Learn. Build. Improve.</footer>
   </main>
-  <dialog id="modal"><form method="dialog" id="modal-form"><div class="modal-head"><h3 id="modal-title">Nuevo registro</h3><button class="close" value="cancel" aria-label="Cerrar">×</button></div><div id="modal-fields"></div><div class="modal-actions"><button class="secondary" value="cancel">Cancelar</button><button class="primary" id="save-modal" value="default">Guardar</button></div></form></dialog>
+
   <script src="app.js"></script>
 </body>
 </html>
