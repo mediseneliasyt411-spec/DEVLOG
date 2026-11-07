@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#101321">
+  <title>DEVLOG | Mi espacio de desarrollo</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <aside class="sidebar">
+    <div class="brand"><span class="brand-mark">&lt;/&gt;</span><div><b>DEVLOG</b><small>MI ESPACIO DEV</small></div></div>
+    <nav>
+      <button class="nav active" data-view="inicio">⌂ <span>Inicio</span></button>
+      <button class="nav" data-view="proyectos">▣ <span>Mis proyectos</span></button>
+      <button class="nav" data-view="aprendizaje">⌘ <span>Aprendizaje</span></button>
+      <button class="nav" data-view="notas">▤ <span>Bitácora</span></button>
+    </nav>
+    <div class="side-bottom"><span class="status-dot"></span> Tus datos se guardan en este dispositivo</div>
+  </aside>
+  <main class="main">
+    <header><div><p class="eyebrow">PANEL PERSONAL</p><h1 id="page-title">Bienvenido a tu espacio.</h1><p class="muted">Cada línea de código cuenta. Sigue construyendo tu futuro.</p></div><div class="date-chip" id="today"></div></header>
+    <section id="view-inicio" class="view">
+      <div class="hero"><div><span class="pill">✦ TU PROGRESO, TU HISTORIA</span><h2>Piensa. Aprende.<br><em>Construye.</em></h2><p>Organiza tus ideas, registra tus avances y convierte lo que aprendes en proyectos reales.</p><button class="primary" data-go="proyectos">Explorar mis proyectos <b>↗</b></button></div><div class="hero-art"><div class="orbit orbit1"></div><div class="orbit orbit2"></div><div class="code-window"><div class="dots">● ● ● <span>main.js</span></div><code><i>const</i> futuro = {<br>&nbsp; aprender: <strong>true</strong>,<br>&nbsp; practicar: <strong>true</strong>,<br>&nbsp; rendirse: <strong>false</strong><br>};<br><br><i>while</i> (futuro.aprender) {<br>&nbsp; construir();<br>}</code></div><div class="floating-tag">0101 · DEV MODE</div></div></div>
+      <div class="stats"><article class="stat"><span>PROYECTOS ACTIVOS</span><b id="stat-projects">0</b><small>Ideas en construcción</small></article><article class="stat"><span>HABILIDADES</span><b id="stat-skills">0</b><small>En seguimiento</small></article><article class="stat"><span>NOTAS GUARDADAS</span><b id="stat-notes">0</b><small>Conocimiento acumulado</small></article><article class="stat"><span>DÍAS REGISTRADOS</span><b id="stat-days">0</b><small>En tu bitácora</small></article></div>
+      <div class="section-heading"><div><p class="eyebrow">TU ESPACIO DE TRABAJO</p><h2>Continúa donde te quedaste</h2></div></div>
+      <div class="quick-grid"><button class="quick-card" data-go="proyectos"><span>▣</span><b>Crear un proyecto</b><small>Guarda una idea y conviértela en algo real.</small><strong>＋</strong></button><button class="quick-card" data-go="aprendizaje"><span>⌘</span><b>Registrar una habilidad</b><small>Da seguimiento a los lenguajes que estudias.</small><strong>＋</strong></button><button class="quick-card" data-go="notas"><span>▤</span><b>Escribir en mi bitácora</b><small>No olvides lo que aprendiste hoy.</small><strong>＋</strong></button></div>
+    </section>
+    <section id="view-proyectos" class="view hidden">
+      <div class="section-heading"><div><p class="eyebrow">CONSTRUYE IDEAS</p><h2>Mis proyectos</h2><p class="muted">Un lugar para organizar lo que estás creando.</p></div><button class="primary" id="add-project">＋ Nuevo proyecto</button></div>
+      <div id="project-list" class="card-grid"></div>
+      <div id="project-empty" class="empty">Todavía no hay proyectos. Agrega tu primera idea y comienza a desarrollarla.</div>
+    </section>
+    <section id="view-aprendizaje" class="view hidden">
+      <div class="section-heading"><div><p class="eyebrow">MEJORA CONTINUA</p><h2>Mi aprendizaje</h2><p class="muted">Registra tecnologías y mide tu propio avance.</p></div><button class="primary" id="add-skill">＋ Nueva habilidad</button></div>
+      <div id="skill-list" class="skill-list"></div><div id="skill-empty" class="empty">Aún no registras habilidades. Agrega un lenguaje o tecnología que estés aprendiendo.</div>
+    </section>
+    <section id="view-notas" class="view hidden">
+      <div class="section-heading"><div><p class="eyebrow">APRENDER TAMBIÉN ES RECORDAR</p><h2>Mi bitácora</h2><p class="muted">Anota conceptos, errores, soluciones e ideas.</p></div><button class="primary" id="add-note">＋ Nueva nota</button></div>
+      <div id="note-list" class="note-list"></div><div id="note-empty" class="empty">Tu bitácora está vacía. Escribe qué aprendiste hoy.</div>
+    </section>
+    <footer>DEVLOG <span>·</span> Hecho para aprender creando.</footer>
+  </main>
+  <dialog id="modal"><form method="dialog" id="modal-form"><div class="modal-head"><h3 id="modal-title">Nuevo registro</h3><button class="close" value="cancel" aria-label="Cerrar">×</button></div><div id="modal-fields"></div><div class="modal-actions"><button class="secondary" value="cancel">Cancelar</button><button class="primary" id="save-modal" value="default">Guardar</button></div></form></dialog>
+  <script src="app.js"></script>
+</body>
+</html>
