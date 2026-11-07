@@ -2,13 +2,6 @@
 
 DEVLOG es una aplicación web para que un estudiante de Ingeniería en Sistemas Computacionales organice proyectos, registre habilidades y documente lo que aprende.
 
-## Cómo ejecutarlo
-1. Descarga y descomprime `DEVLOG.zip`.
-2. Abre la carpeta `DEVLOG`.
-3. Haz doble clic en `index.html` o ábrelo con Live Server desde Visual Studio Code.
-4. Empieza agregando proyectos, habilidades y notas.
-
-No requiere instalación, servidor ni base de datos. Los datos se guardan en el almacenamiento local del navegador (`localStorage`).
 
 ## Funcionalidades
 - Panel principal con estadísticas personales.
