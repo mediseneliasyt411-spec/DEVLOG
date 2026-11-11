@@ -118,7 +118,8 @@ function ensureProjectEditor() {
     <textarea id="projectCode" class="code-editor" spellcheck="false" aria-label="Código del proyecto"></textarea>
     <div class="editor-actions">
       <button class="primary-button" id="saveProjectCode" type="button">Guardar código</button>
-      <button class="secondary-button" id="runProjectCode" type="button">Ejecutar JavaScript</button>
+      <button class="secondary-button" id="runProjectCode" type="button">Ejecutar en consola</button>
+      <button class="secondary-button" id="clearProjectConsole" type="button">Limpiar consola</button>
       <button class="secondary-button" id="closeProjectEditor" type="button">Cerrar editor</button>
     </div>
     <div class="console-panel"><div class="console-title">CONSOLA DEL PROYECTO</div><pre id="projectOutput">Abre un proyecto para comenzar.</pre></div>`;
@@ -202,6 +203,27 @@ $("#projectList").addEventListener("click", e => {
     renderProjects(); renderDashboard();
   }
 });
+function runProjectCode() {
+  $("#runProjectCode").addEventListener("click", runProjectCode);
+
+$("#clearProjectConsole").addEventListener("click", () => {
+  $("#projectOutput").textContent = "Consola limpia.";
+});
+  if (!project) {
+    output.textContent = "Abre un proyecto primero.";
+    return;
+  }
+
+  if (project.tech !== "JavaScript") {
+    output.textContent =
+      `La ejecución de ${project.tech} necesita conectar un compilador.`;
+    output.style.color = "var(--orange)";
+    return;
+  }
+
+  runInSandbox($("#projectCode").value, output);
+  record(`Ejecutaste código en: ${project.name}`);
+}
 
 /* Ejecución aislada: solo JavaScript. El iframe no recibe acceso al DOM principal. */
 function runInSandbox(source, output) {
