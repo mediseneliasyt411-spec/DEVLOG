@@ -757,3 +757,18 @@ input:focus, textarea:focus, select:focus {
         flex-wrap: wrap;
     }
 }
+
+.project-actions, .note-actions { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+.project-workbench { margin-top:22px; }
+.project-workbench[hidden] { display:none; }
+.workbench-meta { padding:14px 17px; border-bottom:1px solid var(--border); }
+.workbench-meta label { max-width:320px; }
+.academy-details { margin-top:24px; }
+.academy-details h3 { font:600 17px 'Space Grotesk'; margin-bottom:8px; }
+.academy-details > p { margin-bottom:16px; }
+.academy-topic-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px; }
+.academy-topic { background:var(--surface-2); border:1px solid var(--border); border-radius:10px; padding:16px; }
+.academy-topic strong { color:#b4a8ff; }
+.academy-topic ol { padding-left:20px; margin-top:10px; color:var(--muted); line-height:1.9; font-size:12px; }
+.note-actions { margin-top:14px; }
+@media(max-width:560px) { .academy-topic-grid { grid-template-columns:1fr; } }
