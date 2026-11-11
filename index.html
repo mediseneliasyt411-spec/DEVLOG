@@ -2,139 +2,304 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>DEVLOG 2.0 | Developer Workspace</title>
-  <link rel="stylesheet" href="styles.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="DEVLOG 2.0 - Tu espacio de desarrollo y aprendizaje.">
+    <title>DEVLOG 2.0 | Developer Workspace</title>
+    <link rel="stylesheet" href="assets/css/styles.css">
 </head>
 <body>
-  <aside class="sidebar">
-    <h2>DEV<span>LOG</span></h2>
-    <p class="subtitle">DEVELOPER WORKSPACE</p>
+    <div class="app">
+        <aside class="sidebar" id="sidebar">
+            <div class="brand">
+                <div class="brand-icon">D</div>
+                <div>
+                    <h1>DEVLOG</h1>
+                    <span>Developer Workspace</span>
+                </div>
+            </div>
 
-    <nav>
-      <button data-view="inicio">⌂ Inicio</button>
-      <button data-view="proyectos">▣ Proyectos</button>
-      <button data-view="academy">⌘ Academy</button>
-      <button data-view="tutor">⌁ Code Tutor</button>
-      <button data-view="musica">♫ Música</button>
-      <button data-view="bitacora">▤ Bitácora</button>
-    </nav>
+            <div class="nav-label">WORKSPACE</div>
+            <nav class="navigation">
+                <button class="nav-item active" data-view="dashboard">
+                    <span>⌂</span> Dashboard
+                </button>
+                <button class="nav-item" data-view="projects">
+                    <span>▣</span> Proyectos
+                </button>
+                <button class="nav-item" data-view="academy">
+                    <span>▤</span> Academy
+                </button>
+                <button class="nav-item" data-view="tutor">
+                    <span>⌘</span> Code Tutor
+                </button>
+                <button class="nav-item" data-view="music">
+                    <span>♫</span> Music
+                </button>
+                <button class="nav-item" data-view="journal">
+                    <span>▧</span> Bitácora
+                </button>
+            </nav>
 
-    <div class="profile">
-      <div class="avatar">D</div>
-      <div>
-        <strong>Developer</strong>
-        <small>Mi espacio personal</small>
-      </div>
+            <div class="sidebar-bottom">
+                <div class="profile">
+                    <div class="avatar">D</div>
+                    <div>
+                        <strong>Developer</strong>
+                        <span>Personal Workspace</span>
+                    </div>
+                </div>
+                <span class="version">DEVLOG v2.0.0</span>
+            </div>
+        </aside>
+
+        <main class="main">
+            <header class="topbar">
+                <button class="menu-button" id="menuButton" aria-label="Abrir menú">☰</button>
+                <div>
+                    <span class="breadcrumb">DEVLOG /</span>
+                    <strong id="pageTitle">Dashboard</strong>
+                </div>
+                <div class="topbar-right">
+                    <span class="status-dot"></span>
+                    <span class="status-text">Workspace local</span>
+                </div>
+            </header>
+
+            <div class="content">
+
+                <!-- DASHBOARD -->
+                <section class="view active" id="dashboard">
+                    <div class="welcome">
+                        <div>
+                            <p class="eyebrow">TU ESPACIO DE DESARROLLO</p>
+                            <h2>Bienvenido a <span>DEVLOG.</span></h2>
+                            <p>Organiza tus ideas, desarrolla proyectos y sigue aprendiendo.</p>
+                        </div>
+                        <div class="welcome-decoration">DEV_</div>
+                    </div>
+
+                    <div class="stats-grid">
+                        <article class="stat-card">
+                            <span>Proyectos registrados</span>
+                            <strong id="statProjects">0</strong>
+                            <small>En tu workspace</small>
+                        </article>
+                        <article class="stat-card">
+                            <span>Notas guardadas</span>
+                            <strong id="statNotes">0</strong>
+                            <small>En tu bitácora</small>
+                        </article>
+                        <article class="stat-card">
+                            <span>Lecciones completadas</span>
+                            <strong id="statLessons">0</strong>
+                            <small>En Academy</small>
+                        </article>
+                    </div>
+
+                    <div class="section-heading">
+                        <div>
+                            <h3>Acceso rápido</h3>
+                            <p>Continúa trabajando en tu espacio.</p>
+                        </div>
+                    </div>
+
+                    <div class="quick-grid">
+                        <button class="quick-card" data-go="projects">
+                            <span class="quick-icon purple">▣</span>
+                            <strong>Mis proyectos</strong>
+                            <small>Organiza tus desarrollos</small>
+                        </button>
+                        <button class="quick-card" data-go="tutor">
+                            <span class="quick-icon blue">⌘</span>
+                            <strong>Code Tutor</strong>
+                            <small>Escribe y revisa código</small>
+                        </button>
+                        <button class="quick-card" data-go="academy">
+                            <span class="quick-icon green">▤</span>
+                            <strong>Academy</strong>
+                            <small>Continúa aprendiendo</small>
+                        </button>
+                        <button class="quick-card" data-go="journal">
+                            <span class="quick-icon orange">▧</span>
+                            <strong>Bitácora</strong>
+                            <small>Registra tus avances</small>
+                        </button>
+                    </div>
+
+                    <div class="section-heading">
+                        <div>
+                            <h3>Actividad reciente</h3>
+                            <p>Los últimos movimientos de tu workspace.</p>
+                        </div>
+                    </div>
+                    <div class="panel" id="recentActivity">
+                        <div class="empty-state">Todavía no hay actividad. ¡Comienza creando un proyecto!</div>
+                    </div>
+                </section>
+
+                <!-- PROYECTOS -->
+                <section class="view" id="projects">
+                    <div class="page-heading">
+                        <div>
+                            <p class="eyebrow">WORKSPACE</p>
+                            <h2>Mis proyectos</h2>
+                            <p>Administra tus ideas y desarrollos.</p>
+                        </div>
+                    </div>
+
+                    <form class="panel form-panel" id="projectForm">
+                        <h3>Nuevo proyecto</h3>
+                        <div class="form-grid">
+                            <label>Nombre del proyecto
+                                <input id="projectName" type="text" placeholder="Ej. Sistema de inventario" required maxlength="70">
+                            </label>
+                            <label>Lenguaje o tecnología
+                                <select id="projectTech">
+                                    <option>Java</option>
+                                    <option>Python</option>
+                                    <option>C++</option>
+                                    <option>JavaScript</option>
+                                    <option>HTML / CSS</option>
+                                    <option>Otro</option>
+                                </select>
+                            </label>
+                        </div>
+                        <label>Descripción
+                            <textarea id="projectDescription" rows="3" placeholder="Describe brevemente tu proyecto..." maxlength="300"></textarea>
+                        </label>
+                        <button class="primary-button" type="submit">+ Crear proyecto</button>
+                    </form>
+
+                    <div class="section-heading">
+                        <h3>Proyectos registrados</h3>
+                        <span class="muted" id="projectCount">0 proyectos</span>
+                    </div>
+                    <div class="project-grid" id="projectList"></div>
+                </section>
+
+                <!-- ACADEMY -->
+                <section class="view" id="academy">
+                    <div class="page-heading">
+                        <div>
+                            <p class="eyebrow">APRENDIZAJE</p>
+                            <h2>Developer Academy</h2>
+                            <p>Organiza tu aprendizaje y registra tu progreso.</p>
+                        </div>
+                    </div>
+                    <div class="course-grid" id="courseList">
+                        <article class="course-card">
+                            <span class="course-tag purple">JAVA</span>
+                            <h3>Fundamentos de Java</h3>
+                            <p>Variables, condicionales, ciclos y programación orientada a objetos.</p>
+                            <button class="secondary-button lesson-button" data-course="java">Marcar como completado</button>
+                            <small class="course-progress" id="progress-java">Pendiente</small>
+                        </article>
+                        <article class="course-card">
+                            <span class="course-tag green">PYTHON</span>
+                            <h3>Python desde cero</h3>
+                            <p>Sintaxis, funciones, estructuras de datos y ejercicios.</p>
+                            <button class="secondary-button lesson-button" data-course="python">Marcar como completado</button>
+                            <small class="course-progress" id="progress-python">Pendiente</small>
+                        </article>
+                        <article class="course-card">
+                            <span class="course-tag blue">WEB</span>
+                            <h3>Desarrollo web</h3>
+                            <p>HTML, CSS, JavaScript y construcción de interfaces.</p>
+                            <button class="secondary-button lesson-button" data-course="web">Marcar como completado</button>
+                            <small class="course-progress" id="progress-web">Pendiente</small>
+                        </article>
+                        <article class="course-card">
+                            <span class="course-tag orange">C++</span>
+                            <h3>Programación en C++</h3>
+                            <p>Tipos de datos, funciones, arreglos y programación estructurada.</p>
+                            <button class="secondary-button lesson-button" data-course="cpp">Marcar como completado</button>
+                            <small class="course-progress" id="progress-cpp">Pendiente</small>
+                        </article>
+                    </div>
+                </section>
+
+                <!-- CODE TUTOR -->
+                <section class="view" id="tutor">
+                    <div class="page-heading">
+                        <div>
+                            <p class="eyebrow">DESARROLLO</p>
+                            <h2>Code Tutor</h2>
+                            <p>Escribe código y revisa algunos errores frecuentes.</p>
+                        </div>
+                    </div>
+
+                    <div class="editor-panel">
+                        <div class="editor-toolbar">
+                            <div class="editor-file"><span class="file-dot"></span> editor.js</div>
+                            <span class="muted">JavaScript · Revisión local</span>
+                        </div>
+                        <textarea id="codeEditor" class="code-editor" spellcheck="false" aria-label="Editor de código" placeholder="// Escribe tu código JavaScript aquí...">const mensaje = "Hola, DEVLOG";
+console.log(mensaje);</textarea>
+                        <div class="editor-actions">
+                            <button class="primary-button" id="checkCode">Revisar código</button>
+                            <button class="secondary-button" id="clearCode">Limpiar editor</button>
+                        </div>
+                        <div class="console-panel">
+                            <div class="console-title">DIAGNÓSTICO</div>
+                            <pre id="codeOutput">Listo para revisar tu código.</pre>
+                        </div>
+                    </div>
+                    <p class="notice">La revisión inicial detecta ciertos errores frecuentes de escritura. No ejecuta código. Para ejecutar programas de forma segura y soportar Java, Python y C++ se necesita un backend con aislamiento.</p>
+                </section>
+
+                <!-- MUSIC -->
+                <section class="view" id="music">
+                    <div class="page-heading">
+                        <div>
+                            <p class="eyebrow">AMBIENTE</p>
+                            <h2>Music</h2>
+                            <p>Escucha música mientras trabajas.</p>
+                        </div>
+                    </div>
+                    <div class="panel music-panel">
+                        <div class="music-art">♫</div>
+                        <h3>Tu espacio musical</h3>
+                        <p>Agrega un enlace de playlist, álbum o canción de Spotify.</p>
+                        <form id="spotifyForm" class="spotify-form">
+                            <input id="spotifyUrl" type="url" placeholder="https://open.spotify.com/playlist/..." required>
+                            <button class="primary-button" type="submit">Cargar Spotify</button>
+                        </form>
+                        <div id="spotifyPlayer" class="spotify-player">
+                            <div class="empty-state">Tu reproductor aparecerá aquí.</div>
+                        </div>
+                        <small class="muted">La reproducción depende de Spotify, tu cuenta y la disponibilidad del contenido.</small>
+                    </div>
+                </section>
+
+                <!-- BITÁCORA -->
+                <section class="view" id="journal">
+                    <div class="page-heading">
+                        <div>
+                            <p class="eyebrow">REGISTRO PERSONAL</p>
+                            <h2>Mi bitácora</h2>
+                            <p>Guarda ideas, avances y aprendizajes.</p>
+                        </div>
+                    </div>
+                    <form class="panel form-panel" id="noteForm">
+                        <h3>Nueva entrada</h3>
+                        <label>Título
+                            <input id="noteTitle" type="text" placeholder="Ej. Lo que aprendí hoy" maxlength="80" required>
+                        </label>
+                        <label>Contenido
+                            <textarea id="noteContent" rows="5" placeholder="Escribe tus ideas o avances..." maxlength="3000" required></textarea>
+                        </label>
+                        <button class="primary-button" type="submit">Guardar entrada</button>
+                    </form>
+                    <div class="section-heading"><h3>Entradas guardadas</h3></div>
+                    <div class="journal-list" id="journalList"></div>
+                </section>
+
+            </div>
+            <footer class="footer">DEVLOG 2.0 <span>Construye. Aprende. Evoluciona.</span></footer>
+        </main>
     </div>
-  </aside>
 
-  <main>
-    <header>
-      <div>
-        <p>YOUR DEVELOPMENT SPACE</p>
-        <h1 id="pageTitle">Bienvenido a DEVLOG</h1>
-      </div>
-      <span class="status">● Espacio local</span>
-    </header>
-
-    <section id="inicio" class="view active">
-      <div class="hero">
-        <p>DEVLOG 2.0</p>
-        <h2>Convierte tus ideas<br>en proyectos reales.</h2>
-        <p>Aprende, programa, documenta y construye tu futuro como desarrollador.</p>
-        <button onclick="showView('academy')">Comenzar a aprender →</button>
-      </div>
-
-      <h2>Resumen general</h2>
-      <div class="stats">
-        <article><small>Proyectos</small><h2 id="projectCount">0</h2></article>
-        <article><small>Tecnologías</small><h2>5</h2></article>
-        <article><small>Notas</small><h2 id="noteCount">0</h2></article>
-      </div>
-
-      <h2>Rutas disponibles</h2>
-      <div class="cards">
-        <article>☕ <h3>Java</h3><p>Programación orientada a objetos.</p></article>
-        <article>🐍 <h3>Python</h3><p>Lógica, funciones y estructuras.</p></article>
-        <article>⚙️ <h3>C++</h3><p>Memoria y programación avanzada.</p></article>
-        <article>🌐 <h3>Desarrollo web</h3><p>HTML, CSS y JavaScript.</p></article>
-      </div>
-    </section>
-
-    <section id="proyectos" class="view">
-      <h2>Mis proyectos</h2>
-      <p>Organiza tus ideas y trabajos de programación.</p>
-      <form id="projectForm" class="form">
-        <input id="projectName" placeholder="Nombre del proyecto" required>
-        <textarea id="projectDescription" placeholder="Descripción del proyecto"></textarea>
-        <select id="projectTech">
-          <option>Java</option>
-          <option>Python</option>
-          <option>C++</option>
-          <option>HTML / CSS / JavaScript</option>
-        </select>
-        <button>Guardar proyecto</button>
-      </form>
-      <div id="projectsList" class="cards"></div>
-    </section>
-
-    <section id="academy" class="view">
-      <h2>DEVLOG Academy</h2>
-      <p>Selecciona una tecnología para comenzar tu aprendizaje.</p>
-      <div class="academy-grid">
-        <button onclick="loadCourse('Java')">Java</button>
-        <button onclick="loadCourse('Python')">Python</button>
-        <button onclick="loadCourse('C++')">C++</button>
-        <button onclick="loadCourse('HTML y CSS')">HTML y CSS</button>
-        <button onclick="loadCourse('JavaScript')">JavaScript</button>
-      </div>
-      <article id="courseContent" class="panel">
-        Selecciona una ruta de aprendizaje.
-      </article>
-    </section>
-
-    <section id="tutor" class="view">
-      <h2>Code Tutor</h2>
-      <p>Escribe código y recibe observaciones educativas.</p>
-      <select id="codeLanguage">
-        <option>JavaScript</option>
-        <option>Java</option>
-        <option>Python</option>
-        <option>C++</option>
-      </select>
-      <textarea id="codeEditor" class="editor" spellcheck="false" placeholder="// Escribe tu código aquí"></textarea>
-      <button onclick="reviewCode()">Revisar código</button>
-      <article id="codeResults" class="panel">
-        Esperando código...
-      </article>
-    </section>
-
-    <section id="musica" class="view">
-      <h2>Focus Mode</h2>
-      <p>Conecta una playlist o canción de Spotify.</p>
-      <input id="spotifyLink" placeholder="Pega aquí tu enlace de Spotify">
-      <button onclick="connectSpotify()">Conectar Spotify</button>
-      <div id="spotifyPlayer" class="panel">
-        Tu reproductor aparecerá aquí.
-      </div>
-    </section>
-
-    <section id="bitacora" class="view">
-      <h2>Bitácora de desarrollo</h2>
-      <p>Registra tus aprendizajes y avances.</p>
-      <form id="noteForm" class="form">
-        <input id="noteTitle" placeholder="Título de la nota" required>
-        <textarea id="noteBody" placeholder="¿Qué aprendiste hoy?" required></textarea>
-        <button>Guardar nota</button>
-      </form>
-      <div id="notesList"></div>
-    </section>
-
-    <footer>DEVLOG 2.0 · Learn. Build. Improve.</footer>
-  </main>
-
-  <script src="app.js"></script>
+    <script src="js/app.js"></script>
 </body>
 </html>
