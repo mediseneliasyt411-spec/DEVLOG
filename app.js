@@ -124,13 +124,12 @@ function ensureProjectEditor() {
     <div class="console-panel"><div class="console-title">CONSOLA DEL PROYECTO</div><pre id="projectOutput">Abre un proyecto para comenzar.</pre></div>`;
   $("#projectList").insertAdjacentElement("afterend", host);
   $("#saveProjectCode").addEventListener("click", saveProjectCode);
+  $("#runProjectCode").textContent = "Analizar código";
   $("#runProjectCode").addEventListener("click", () => {
     const p = projects.find(x => x.id === editingProjectId);
-    if (!p || normalizedTech(p.tech) !== "JavaScript") {
-      $("#projectOutput").textContent = `La ejecución de ${p ? normalizedTech(p.tech) : "este lenguaje"} no está conectada. El código se puede editar y guardar; para ejecutarlo hace falta un compilador/backend.`;
-      return;
-    }
-    runInSandbox($("#projectCode").value, $("#projectOutput"));
+    if (!p) { $("#projectOutput").textContent = "Abre un proyecto primero."; return; }
+    showAnalysis($("#projectCode").value, normalizedTech(p.tech), $("#projectOutput"), $("#consoleStatus") || {set textContent(v){}});
+    record(`Analizaste código en: ${p.name}`);
   });
   $("#closeProjectEditor").addEventListener("click", () => { host.hidden = true; editingProjectId = null; });
 }
@@ -307,6 +306,102 @@ function inspectJavaScript(source) {
   return problems;
 }
 
+
+function analyzeSource(source, tech) {
+  const code = String(source || "");
+  const lang = String(tech || "JavaScript");
+  const lines = code.split(/\r?\n/);
+  const found = [];
+  const add = (level, line, title, why, fix, replacement = "") =>
+    found.push({level, line, title, why, fix, replacement});
+  if (!code.trim()) add("warning", 1, "Código vacío", "No hay instrucciones para revisar.", "Escribe código y vuelve a analizar.");
+  if (lang === "JavaScript") {
+    try { new Function(code); }
+    catch (e) {
+      const m = String(e.message || e);
+      add("error", 1, "Error de sintaxis", m, "Revisa paréntesis, llaves, comillas y la estructura indicada.");
+    }
+  } else if (lang === "Python") {
+    lines.forEach((raw, i) => {
+      const s = raw.trim();
+      if (!s || s.startsWith("#")) return;
+      if (/^(if|elif|else|for|while|def|class|try|except|finally|with)\b/.test(s) && !s.endsWith(":"))
+        add("error", i+1, "Faltan dos puntos", "Esta instrucción de Python debe terminar con dos puntos (:).", "Agrega : al final de la instrucción.", raw.replace(/\s*$/, "") + ":");
+      if (/\b(true|false|null)\b/.test(s))
+        add("error", i+1, "Literal incorrecto", "Python distingue mayúsculas en True, False y None.", "Usa True, False o None según corresponda.");
+      if (/^print\s+["']/.test(s))
+        add("error", i+1, "Sintaxis de print", "En Python 3, print se utiliza como función.", "Usa print(\"texto\").");
+      if (/\t/.test(raw) && /^ +/.test(raw))
+        add("warning", i+1, "Indentación mezclada", "La línea combina tabuladores y espacios.", "Utiliza una indentación consistente, preferentemente cuatro espacios.");
+    });
+  } else if (lang === "Java" || lang === "C++") {
+    let stack = [];
+    let quote = "", escaped = false;
+    const pairs = {"(":")","[":"]","{":"}"};
+    lines.forEach((raw, i) => {
+      const s = raw.trim();
+      if (!s || s.startsWith("//") || s.startsWith("#")) return;
+      for (let j=0;j<raw.length;j++) {
+        const c=raw[j];
+        if (quote) { if (escaped) escaped=false; else if (c==="\\") escaped=true; else if (c===quote) quote=""; continue; }
+        if (c==="'" || c==='"') { quote=c; continue; }
+        if (pairs[c]) stack.push({c,line:i+1});
+        else if ([")","]","}"].includes(c)) {
+          const last=stack.pop();
+          if (!last || pairs[last.c]!==c) add("error",i+1,"Cierre no coincidente",`El símbolo ${c} no coincide con una apertura.`,`Revisa los delimitadores de esta línea.`);
+        }
+      }
+      const control = /^(if|else|for|while|switch|try|catch|do)\b/.test(s);
+      const declaration = /^(return|throw|break|continue|System\.out\.|cout\s*<<|int\s+\w+\s*=|double\s+\w+\s*=|String\s+\w+\s*=)/.test(s);
+      if (!control && declaration && !/[;{}]$/.test(s))
+        add("warning",i+1,"Posible punto y coma faltante","Esta instrucción normalmente termina con ;.","Agrega punto y coma al final.",raw.replace(/\s*$/, "")+";");
+      if (lang==="Java" && /\bString\s+\w+\s*=\s*'[^']*'/.test(s))
+        add("error",i+1,"Comillas incorrectas","Los textos String en Java usan comillas dobles.","Cambia las comillas simples por dobles.");
+    });
+    stack.forEach(x=>add("error",x.line,"Delimitador sin cerrar",`Falta cerrar ${pairs[x.c]}.`,`Agrega el delimitador de cierre correspondiente.`));
+    if (lang==="Java" && code.trim() && !/\bclass\s+\w+/.test(code))
+      add("warning",1,"No se detectó una clase","Una aplicación Java normalmente declara una clase.","Comprueba que el archivo contenga una clase.");
+    if (lang==="C++" && code.trim() && !/\bmain\s*\(/.test(code))
+      add("warning",1,"No se detectó main","No se encontró la función de entrada habitual.","Agrega int main() si este archivo es un programa ejecutable.");
+  } else if (lang === "HTML / CSS" || lang === "HTML") {
+    const voids = new Set(["area","base","br","col","embed","hr","img","input","link","meta","source","track","wbr"]);
+    const stack = [];
+    const rx = /<\/?([a-z][\w-]*)\b[^>]*>/gi; let m;
+    while ((m=rx.exec(code))) {
+      const tag=m[1].toLowerCase(), closing=m[0].startsWith("</"), self=/\/>$/.test(m[0]);
+      const line=code.slice(0,m.index).split(/\r?\n/).length;
+      if (voids.has(tag)||self) continue;
+      if (!closing) stack.push({tag,line});
+      else {
+        const last=stack.pop();
+        if (!last || last.tag!==tag) add("warning",line,"Cierre de etiqueta dudoso",`La etiqueta </${tag}> no coincide con la última etiqueta abierta.`,`Revisa el orden de las etiquetas.`);
+      }
+    }
+    stack.forEach(x=>add("warning",x.line,"Etiqueta sin cerrar",`Falta revisar el cierre de <${x.tag}>.`,`Agrega </${x.tag}> donde corresponda.`));
+  } else if (lang === "CSS") {
+    let depth=0;
+    lines.forEach((raw,i)=>{
+      const s=raw.trim();
+      for (const c of s) { if(c==="{") depth++; if(c==="}") depth--; }
+      if (s.includes(":") && !s.startsWith("/*") && !/[;{}]$/.test(s) && !s.endsWith("*/"))
+        add("warning",i+1,"Posible ; faltante","Una declaración CSS suele terminar con punto y coma.","Agrega ; al final.",raw.replace(/\s*$/,"")+";");
+      if (depth<0) { add("error",i+1,"Llave de cierre inesperada","Hay una } sin una apertura previa.","Revisa las llaves del bloque CSS."); depth=0; }
+    });
+    if(depth>0) add("error",lines.length,"Falta cerrar un bloque CSS","Hay una llave { sin pareja.","Agrega } al final del bloque.");
+  }
+  if (!found.length) found.push({level:"success",line:0,title:"Sin problemas detectados",why:"El análisis básico no encontró errores conocidos.",fix:"Esto no garantiza que el programa esté libre de errores lógicos. Revisa también su comportamiento y requisitos."});
+  return found;
+}
+function showAnalysis(source, tech, output, status) {
+  const results = analyzeSource(source, tech);
+  output.textContent = results.map(x =>
+    `[${x.level.toUpperCase()}] ${x.line ? "Línea "+x.line : "Resultado"} · ${x.title}\n${x.why}\nSugerencia: ${x.fix}${x.replacement ? "\nCorrección propuesta: "+x.replacement : ""}`
+  ).join("\n\n");
+  output.style.color = results.some(x=>x.level==="error") ? "var(--orange)" : "var(--green)";
+  status.textContent = `${results.filter(x=>x.level==="error").length} errores · ${results.filter(x=>x.level==="warning").length} advertencias`;
+  return results;
+}
+
 /* Code Tutor */
 if ($("#codeEditor")) {
   const saved = loadData(STORAGE_KEYS.tutorCode, null);
@@ -315,9 +410,12 @@ if ($("#codeEditor")) {
   if (actions && !$("#runTutorCode")) {
     const run = document.createElement("button");
     run.id = "runTutorCode"; run.type = "button";
-    run.className = "primary-button"; run.textContent = "Ejecutar JavaScript";
+    run.className = "primary-button"; run.textContent = "Analizar código";
     actions.insertBefore(run, $("#clearCode"));
-    run.addEventListener("click", () => runInSandbox($("#codeEditor").value, $("#codeOutput")));
+    run.addEventListener("click", () => {
+      showAnalysis($("#codeEditor").value, "JavaScript", $("#codeOutput"), $("#tutorStatus") || {set textContent(v){}});
+      record("Analizaste código en Code Tutor");
+    });
   }
   $("#codeEditor").addEventListener("input", () => saveData(STORAGE_KEYS.tutorCode, $("#codeEditor").value));
   $("#checkCode").addEventListener("click", () => {
