@@ -1,303 +1,106 @@
-/* DEVLOG 2.1 - aplicación local. Persistencia en localStorage. */
+/* DEVLOG 2.2 — diagnóstico estático, aprendizaje y gestión local. No ejecuta código. */
 "use strict";
+const STORE={projects:"devlog_projects_v2",notes:"devlog_notes_v2",lessons:"devlog_lessons_v2",activity:"devlog_activity_v2",spotify:"devlog_spotify_v2",tutor:"devlog_tutor_code_v2",lessonProgress:"devlog_lesson_progress_v2"};
+const $=(s,r=document)=>r.querySelector(s),$$=(s,r=document)=>[...r.querySelectorAll(s)];
+const read=(k,f)=>{try{const v=localStorage.getItem(k);return v===null?f:JSON.parse(v)}catch(e){console.warn("Storage read",e);return f}};
+const write=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v));return true}catch(e){toast("No se pudo guardar. Revisa el almacenamiento del navegador.");return false}};
+const uid=()=>globalThis.crypto?.randomUUID?.()||`${Date.now()}-${Math.random().toString(16).slice(2)}`;
+const now=()=>new Intl.DateTimeFormat("es-MX",{dateStyle:"medium",timeStyle:"short"}).format(new Date());
+const esc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+let projects=read(STORE.projects,[]),notes=read(STORE.notes,[]),completedCourses=read(STORE.lessons,[]),activity=read(STORE.activity,[]),spotify=read(STORE.spotify,""),lessonProgress=read(STORE.lessonProgress,[]);
+let editingProjectId=null,editingNoteId=null,toastTimer=null;
 
-const STORE = {
-  projects: "devlog_projects_v2",
-  notes: "devlog_notes_v2",
-  lessons: "devlog_lessons_v2",
-  activity: "devlog_activity_v2",
-  spotify: "devlog_spotify_v2",
-  tutor: "devlog_tutor_code_v2"
-};
-const $ = (selector, root = document) => root.querySelector(selector);
-const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
-const read = (key, fallback) => {
-  try { const value = localStorage.getItem(key); return value === null ? fallback : JSON.parse(value); }
-  catch (error) { console.warn("No se pudo leer el almacenamiento", error); return fallback; }
-};
-const write = (key, value) => {
-  try { localStorage.setItem(key, JSON.stringify(value)); return true; }
-  catch (error) { console.error(error); toast("No se pudo guardar. Revisa el almacenamiento del navegador."); return false; }
-};
-const uid = () => globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(16).slice(2)}`;
-const now = () => new Intl.DateTimeFormat("es-MX", {dateStyle:"medium",timeStyle:"short"}).format(new Date());
-const escapeHTML = value => String(value ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-let projects = read(STORE.projects, []);
-let notes = read(STORE.notes, []);
-let lessons = read(STORE.lessons, []);
-let activity = read(STORE.activity, []);
-let spotify = read(STORE.spotify, "");
-let editingProjectId = null;
-let editingNoteId = null;
-let toastTimer;
+function toast(message){const el=$("#toast");el.textContent=message;el.classList.add("show");clearTimeout(toastTimer);toastTimer=setTimeout(()=>el.classList.remove("show"),2400)}
+function record(message){activity.unshift({id:uid(),message,date:now()});activity=activity.slice(0,8);write(STORE.activity,activity);renderActivity()}
+function empty(message){return `<div class="empty-state">${esc(message)}</div>`}
 
-function toast(message) {
-  const el = $("#toast");
-  if (!el) return;
-  el.textContent = message;
-  el.classList.add("show");
-  clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => el.classList.remove("show"), 2400);
-}
-function record(message) {
-  activity.unshift({id:uid(),message,date:now()});
-  activity = activity.slice(0,8);
-  write(STORE.activity,activity);
-  renderActivity();
-}
-function empty(message) { return `<div class="empty-state">${escapeHTML(message)}</div>`; }
-
-const pageNames = {dashboard:"Dashboard",projects:"Proyectos",academy:"Academy",tutor:"Code Tutor",music:"Music",journal:"Bitácora"};
-function navigateTo(name) {
-  if (!pageNames[name]) return;
-  $$(".view").forEach(view => view.classList.toggle("active",view.id===name));
-  $$(".nav-link").forEach(button => button.classList.toggle("active",button.dataset.view===name));
-  $("#pageTitle").textContent = pageNames[name];
-  $("#sidebar").classList.remove("open");
-  if (name==="dashboard") renderDashboard();
-}
-$$(".nav-link").forEach(button => button.addEventListener("click",()=>navigateTo(button.dataset.view)));
-$$("[data-go]").forEach(button => button.addEventListener("click",()=>navigateTo(button.dataset.go)));
+/* Navegación: los seis destinos y los accesos rápidos comparten el mismo controlador. */
+const pageNames={dashboard:"Dashboard",projects:"Proyectos",academy:"Academy",tutor:"Code Tutor",music:"Music",journal:"Bitácora"};
+function navigateTo(name){if(!pageNames[name])return;$$(".view").forEach(v=>v.classList.toggle("active",v.id===name));$$(".nav-link").forEach(b=>b.classList.toggle("active",b.dataset.view===name));$("#pageTitle").textContent=pageNames[name];$("#sidebar").classList.remove("open");if(name==="dashboard")renderDashboard()}
+$$(".nav-link").forEach(b=>b.addEventListener("click",()=>navigateTo(b.dataset.view)));
+$$("[data-go]").forEach(b=>b.addEventListener("click",e=>{e.preventDefault();navigateTo(b.dataset.go)}));
 $("#menuButton").addEventListener("click",()=>$("#sidebar").classList.toggle("open"));
+document.addEventListener("click",e=>{if($("#sidebar").classList.contains("open")&&!e.target.closest("#sidebar")&&!e.target.closest("#menuButton"))$("#sidebar").classList.remove("open")});
 
-function renderActivity() {
-  const box=$("#recentActivity");
-  box.innerHTML=activity.length ? activity.map(item=>`<div class="activity-row"><span>${escapeHTML(item.message)}</span><small>${escapeHTML(item.date)}</small></div>`).join("") : empty("Todavía no hay actividad. ¡Crea tu primer proyecto!");
-}
-function renderDashboard() {
-  $("#statProjects").textContent=projects.length;
-  $("#statNotes").textContent=notes.length;
-  $("#statLessons").textContent=lessons.length;
-  renderActivity();
-}
+function renderActivity(){$("#recentActivity").innerHTML=activity.length?activity.map(x=>`<div class="activity-row"><span>${esc(x.message)}</span><small>${esc(x.date)}</small></div>`).join(""):empty("Todavía no hay actividad. ¡Crea tu primer proyecto!")};
+function renderDashboard(){$("#statProjects").textContent=projects.length;$("#statNotes").textContent=notes.length;$("#statLessons").textContent=completedCourses.length;$("#statCompletedLessons").textContent=lessonProgress.length;renderActivity()}
 
-function extensionFor(tech) {
-  return ({Java:"java",Python:"py","C++":"cpp","HTML / CSS":"html",JavaScript:"js",Otro:"txt"})[tech] || "txt";
-}
-function defaultFileName(tech) { return tech==="Java" ? "Main.java" : `main.${extensionFor(tech)}`; }
-function starterCode(tech) {
-  if (tech==="Python") return '# Programa inicial de DEVLOG\nprint("Hola, DEVLOG")';
-  if (tech==="Java") return 'public class Main {\n    public static void main(String[] args) {\n        System.out.println("Hola, DEVLOG");\n    }\n}';
-  if (tech==="C++") return '#include <iostream>\nusing namespace std;\n\nint main() {\n    cout << "Hola, DEVLOG" << endl;\n    return 0;\n}';
-  if (tech==="HTML / CSS") return '<!doctype html>\n<html lang="es">\n<head><meta charset="utf-8"><title>Mi proyecto</title></head>\n<body><h1>Hola, DEVLOG</h1></body>\n</html>';
-  if (tech==="JavaScript") return 'const mensaje = "Hola, DEVLOG";\nconsole.log(mensaje);';
-  return "// Comienza tu proyecto aquí.";
-}
-function renderProjects() {
-  $("#projectCount").textContent=`${projects.length} ${projects.length===1?"proyecto":"proyectos"}`;
-  $("#projectList").innerHTML=projects.length ? projects.map(project=>`
-    <article class="project-card">
-      <span class="project-meta">${escapeHTML(project.tech)}</span>
-      <h3>${escapeHTML(project.name)}</h3><p>${escapeHTML(project.description||"Sin descripción.")}</p>
-      <div class="project-footer"><small class="muted">${escapeHTML(project.date||"")}</small>
-        <div class="project-actions"><button class="button secondary" data-open-project="${escapeHTML(project.id)}">Abrir editor</button><button class="delete-button" data-delete-project="${escapeHTML(project.id)}">Eliminar</button></div>
-      </div>
-    </article>`).join("") : empty("Aún no tienes proyectos. Crea el primero con el formulario.");
-}
-$("#projectForm").addEventListener("submit",event=>{
-  event.preventDefault();
-  const name=$("#projectName").value.trim();
-  if(!name) return;
-  const tech=$("#projectTech").value;
-  const project={id:uid(),name,tech,description:$("#projectDescription").value.trim(),date:now(),code:starterCode(tech),fileName:defaultFileName(tech)};
-  projects.unshift(project);
-  if(!write(STORE.projects,projects)){projects.shift();return;}
-  event.target.reset();
-  record(`Creaste el proyecto: ${name}`);
-  renderProjects();renderDashboard();toast("Proyecto creado.");
-});
-function openProject(projectId) {
-  const project=projects.find(item=>item.id===projectId);
-  if(!project)return;
-  editingProjectId=projectId;
-  $("#workbenchTitle").textContent=project.name;
-  $("#workbenchTech").textContent=project.tech;
-  $("#workbenchFile").value=project.fileName||defaultFileName(project.tech);
-  $("#projectCode").value=project.code??starterCode(project.tech);
-  $("#projectOutput").textContent="Código cargado. Guarda tus cambios para conservarlos.";
-  $("#consoleStatus").textContent="Editor abierto";
-  $("#projectWorkbench").hidden=false;
-  $("#projectWorkbench").scrollIntoView({behavior:"smooth",block:"start"});
-}
-$("#projectList").addEventListener("click",event=>{
-  const open=event.target.closest("[data-open-project]");
-  const remove=event.target.closest("[data-delete-project]");
-  if(open)openProject(open.dataset.openProject);
-  if(remove){
-    const project=projects.find(item=>item.id===remove.dataset.deleteProject);
-    if(!project||!confirm(`¿Eliminar el proyecto "${project.name}"?`))return;
-    projects=projects.filter(item=>item.id!==project.id);
-    if(!write(STORE.projects,projects))return;
-    if(editingProjectId===project.id){editingProjectId=null;$("#projectWorkbench").hidden=true;}
-    record(`Eliminaste el proyecto: ${project.name}`);renderProjects();renderDashboard();toast("Proyecto eliminado.");
-  }
-});
-$("#saveProjectCode").addEventListener("click",()=>{
-  const project=projects.find(item=>item.id===editingProjectId);
-  if(!project){toast("Abre un proyecto primero.");return;}
-  project.code=$("#projectCode").value;
-  let file=$("#workbenchFile").value.trim().replace(/[\\/:*?"<>|]/g,"").slice(0,80);
-  project.fileName=file||defaultFileName(project.tech);
-  if(write(STORE.projects,projects)){
-    $("#projectOutput").textContent="✓ Código guardado en este dispositivo.";
-    $("#consoleStatus").textContent="Guardado";
-    record(`Guardaste código en: ${project.name}`);toast("Código guardado.");
-  }
-});
-$("#runProjectCode").addEventListener("click",()=>{
-  const project=projects.find(item=>item.id===editingProjectId);
-  if(!project){$("#projectOutput").textContent="Abre un proyecto primero.";return;}
-  if(project.tech!=="JavaScript"){
-    $("#projectOutput").textContent=`La ejecución de ${project.tech} todavía no está conectada. Puedes editar y guardar el código; para ejecutarlo se necesita un compilador/backend.`;
-    $("#consoleStatus").textContent="No disponible";
-    return;
-  }
-  executeJavaScript($("#projectCode").value,$("#projectOutput"),$("#consoleStatus"));
-  record(`Ejecutaste código en: ${project.name}`);
-});
-$("#clearProjectConsole").addEventListener("click",()=>{
-  $("#projectOutput").textContent="Consola limpia.";$("#consoleStatus").textContent="Lista";
-});
-$("#closeProjectEditor").addEventListener("click",()=>{
-  $("#projectWorkbench").hidden=true;editingProjectId=null;
-});
+const techs=["JavaScript","Python","Java","C++","HTML / CSS"];
+function ext(t){return ({"JavaScript":"js","Python":"py","Java":"java","C++":"cpp","HTML / CSS":"html"})[t]||"txt"}
+function fileName(t){return t==="Java"?"Main.java":`main.${ext(t)}`}
+function starter(t){return ({
+"JavaScript":'const mensaje = "Hola, DEVLOG";\nconsole.log(mensaje);',
+"Python":'# Programa inicial de DEVLOG\nprint("Hola, DEVLOG")',
+"Java":'public class Main {\n    public static void main(String[] args) {\n        System.out.println("Hola, DEVLOG");\n    }\n}',
+"C++":'#include <iostream>\nusing namespace std;\n\nint main() {\n    cout << "Hola, DEVLOG" << endl;\n    return 0;\n}',
+"HTML / CSS":'<!doctype html>\n<html lang="es">\n<head><meta charset="utf-8"><title>Mi página</title></head>\n<body><h1>Hola, DEVLOG</h1></body>\n</html>'
+})[t]||""}
+function renderProjects(){$("#projectCount").textContent=`${projects.length} ${projects.length===1?"proyecto":"proyectos"}`;$("#projectList").innerHTML=projects.length?projects.map(p=>`<article class="project-card"><span class="project-meta">${esc(p.tech)}</span><h3>${esc(p.name)}</h3><p>${esc(p.description||"Sin descripción.")}</p><div class="project-footer"><small>${esc(p.date||"")}</small><div class="project-actions"><button class="button secondary" data-open-project="${esc(p.id)}">Abrir editor</button><button class="delete-button" data-delete-project="${esc(p.id)}">Eliminar</button></div></div></article>`).join(""):empty("Aún no tienes proyectos. Crea el primero con el formulario.")}
+$("#projectForm").addEventListener("submit",e=>{e.preventDefault();const name=$("#projectName").value.trim(),tech=$("#projectTech").value;if(!name)return;const p={id:uid(),name,tech,description:$("#projectDescription").value.trim(),date:now(),code:starter(tech),fileName:fileName(tech)};projects.unshift(p);if(!write(STORE.projects,projects)){projects.shift();return}e.target.reset();renderProjects();renderDashboard();record(`Creaste el proyecto: ${name}`);toast("Proyecto creado.")});
+function openProject(id){const p=projects.find(x=>String(x.id)===String(id));if(!p)return;editingProjectId=p.id;$("#workbenchTitle").textContent=p.name;$("#workbenchTech").textContent=p.tech;$("#workbenchFile").value=p.fileName||fileName(p.tech);$("#projectCode").value=p.code??starter(p.tech);$("#projectWorkbench").hidden=false;$("#projectDiagnostics").innerHTML=empty("Analiza el código para ver errores y sugerencias.");$("#projectWorkbench").scrollIntoView({behavior:"smooth",block:"start"})}
+$("#projectList").addEventListener("click",e=>{const open=e.target.closest("[data-open-project]"),del=e.target.closest("[data-delete-project]");if(open)openProject(open.dataset.openProject);if(del){const p=projects.find(x=>String(x.id)===del.dataset.deleteProject);if(!p||!confirm(`¿Eliminar el proyecto "${p.name}"?`))return;projects=projects.filter(x=>x.id!==p.id);if(!write(STORE.projects,projects))return;if(editingProjectId===p.id){editingProjectId=null;$("#projectWorkbench").hidden=true}renderProjects();renderDashboard();record(`Eliminaste el proyecto: ${p.name}`);toast("Proyecto eliminado.")}});
+$("#saveProjectCode").addEventListener("click",()=>{const p=projects.find(x=>x.id===editingProjectId);if(!p)return toast("Abre un proyecto primero.");p.code=$("#projectCode").value;p.fileName=$("#workbenchFile").value.trim().replace(/[\\/:*?"<>|]/g,"").slice(0,80)||fileName(p.tech);if(write(STORE.projects,projects)){toast("Código guardado.");record(`Guardaste código en: ${p.name}`)}});
+$("#analyzeProjectCode").addEventListener("click",()=>{const p=projects.find(x=>x.id===editingProjectId);if(!p)return;renderDiagnostics(analyze($("#projectCode").value,p.tech),$("#projectDiagnostics"));record(`Analizaste código en: ${p.name}`)});
+$("#clearProjectConsole").addEventListener("click",()=>$("#projectDiagnostics").innerHTML=empty("Diagnóstico limpiado."));
+$("#closeProjectEditor").addEventListener("click",()=>{$("#projectWorkbench").hidden=true;editingProjectId=null});
 
-function executeJavaScript(source,output,status) {
-  if(!source.trim()){output.textContent="El editor está vacío.";status.textContent="Sin código";return;}
-  output.textContent="Ejecutando…";status.textContent="Ejecutando";
-  const frame=document.createElement("iframe");
-  frame.setAttribute("sandbox","allow-scripts");
-  frame.setAttribute("aria-hidden","true");
-  frame.style.cssText="position:fixed;width:1px;height:1px;left:-10000px;top:-10000px;border:0";
-  const token=uid();let finished=false;let timer;
-  const finish=(message,isError=false)=>{
-    if(finished)return;finished=true;clearTimeout(timer);window.removeEventListener("message",onMessage);frame.remove();
-    output.textContent=message;output.style.color=isError?"var(--orange)":"var(--green)";status.textContent=isError?"Finalizado con error":"Finalizado";
-  };
-  const onMessage=event=>{
-    if(event.source!==frame.contentWindow||!event.data||event.data.token!==token)return;
-    if(event.data.type==="result")finish(event.data.lines.join("\n")||"✓ Ejecutado sin mensajes de consola.");
-    if(event.data.type==="error")finish(`Error: ${event.data.message}`,true);
-  };
-  window.addEventListener("message",onMessage);
-  timer=setTimeout(()=>finish("Tiempo límite alcanzado (2 segundos). El proceso fue detenido.",true),2000);
-  const encoded=JSON.stringify(String(source));
-  frame.srcdoc=`<!doctype html><meta charset="utf-8"><script>
-    const token=${JSON.stringify(token)},lines=[];
-    const format=value=>{try{return typeof value==="string"?value:JSON.stringify(value)??String(value)}catch{return String(value)}};
-    for(const method of ["log","info","warn","error"])console[method]=(...args)=>lines.push((method==="error"?"Error: ":method==="warn"?"Aviso: ":"")+args.map(format).join(" "));
-    try{(new Function(${encoded}))();parent.postMessage({token,type:"result",lines},"*")}
-    catch(error){parent.postMessage({token,type:"error",message:error&&error.message?error.message:String(error)},"*")}
-  <\/script>`;
-  document.body.appendChild(frame);
-}
+/* Analizador estático: reglas educativas comunes por lenguaje. Los avisos no son compilación. */
+function lineOf(src,index){return src.slice(0,index).split("\n").length}
+function diag(level,title,detail,line,suggestion){return {level,title,detail,line,suggestion}}
+function balanced(src,open,close,label,out){let stack=[],quote=null,escape=false,lineComment=false,block=false;for(let i=0;i<src.length;i++){let c=src[i],n=src[i+1];if(lineComment){if(c==="\n")lineComment=false;continue}if(block){if(c==="*"&&n==="/"){block=false;i++}continue}if(quote){if(escape){escape=false;continue}if(c==="\\"){escape=true;continue}if(c===quote)quote=null;continue}if(c==="/"&&n==="/"){lineComment=true;i++;continue}if(c==="/"&&n==="*"){block=true;i++;continue}if(c==='"'||c==="'"||c==="`"){quote=c;continue}if(c===open)stack.push(i);if(c===close){if(!stack.length)out.push(diag("error",`Cierre inesperado ${close}`,"Hay un cierre sin apertura correspondiente.",lineOf(src,i),`Revisa si falta ${open} antes de esta línea.`));else stack.pop()}}if(stack.length)out.push(diag("error",`${label} sin cerrar`,`Falta cerrar ${close}.`,lineOf(src,stack[stack.length-1]),`Agrega ${close} para cerrar el bloque.`));if(quote)out.push(diag("error","Cadena sin cerrar","Una cadena de texto parece no tener comilla de cierre.",Math.max(1,src.split("\n").length),"Cierra la cadena con la misma comilla con la que comenzó."));if(block)out.push(diag("warning","Comentario sin cerrar","El comentario de bloque /* parece no tener */.",src.split("\n").length,"Cierra el comentario con */."))}
+function analyzeJS(src){let out=[];if(!src.trim())return [diag("warning","Editor vacío","Escribe código antes de analizarlo.",1,"Prueba con: const total = 10;")];balanced(src,"{","}","Llave",out);balanced(src,"(",")","Paréntesis",out);balanced(src,"[","]","Corchete",out);const lines=src.split("\n");lines.forEach((s,i)=>{const n=i+1;if(/\bvar\s+\w+/.test(s))out.push(diag("warning","Uso de var","Se recomienda const o let para declarar variables.",n,"Usa const si el valor no cambia o let si necesitas reasignarlo."));if(/\bconsole\.log\s*\(\s*\)/.test(s))out.push(diag("warning","Consola sin contenido","console.log no recibe ningún valor.",n,"Agrega una variable o texto dentro de console.log(...)."));if(/\b(?:const|let)\s+\w+\s*=/.test(s)&&/=\s*;/.test(s))out.push(diag("error","Asignación vacía","La variable se declara sin un valor después del signo =.",n,"Asigna un valor, por ejemplo: const total = 0;"));if(/\bif\s*\([^)]*\)\s*[^{\s]/.test(s)&&!/\bif\s*\([^)]*\)\s*\{/.test(s))out.push(diag("warning","Bloque if sin llaves","El if parece no utilizar llaves para delimitar el bloque.",n,"Usa if (condicion) { ... } para hacer el bloque más claro."));if(/\b(?:==)\b/.test(s)&&!s.includes("==="))out.push(diag("warning","Comparación flexible","== convierte tipos antes de comparar.",n,"Considera usar === para comparar valor y tipo."));if(/\bdebugger\s*;?/.test(s))out.push(diag("warning","Instrucción debugger","La pausa de depuración puede detener la aplicación.",n,"Elimina debugger cuando termines de depurar."));if(/;\s*;/.test(s))out.push(diag("warning","Punto y coma duplicado","Hay dos puntos y coma consecutivos.",n,"Elimina el punto y coma sobrante."));});if(!out.length)out.push(diag("success","Sin problemas detectados","No se encontraron problemas comunes con las reglas básicas de DEVLOG.",1,"Continúa probando casos y revisando la lógica de tu programa."));return out}
+function analyzePython(src){let out=[];if(!src.trim())return [diag("warning","Editor vacío","Escribe código Python antes de analizarlo.",1,"Prueba con: print('Hola')")];const lines=src.split("\n");let stack=[];lines.forEach((s,i)=>{let n=i+1,trim=s.trim();if(!trim||trim.startsWith("#"))return;let indent=(s.match(/^\s*/)||[""])[0].replace(/\t/g,"    ").length;if(/^(if|elif|else|for|while|def|class|try|except|finally|with)\b/.test(trim)&&!trim.endsWith(":"))out.push(diag("error","Falta dos puntos","Las instrucciones de bloque de Python deben terminar con :.",n,"Agrega : al final de la instrucción."));if(/^(print|input|range|len)\s+[^(]/.test(trim))out.push(diag("error","Llamada sin paréntesis","Las funciones de Python se llaman usando paréntesis.",n,`Escribe ${trim.split(/\s+/)[0]}(...).`));if(/\bTrue\b|\bFalse\b|\bNone\b/.test(trim)===false&&/\b(true|false|null)\b/.test(trim))out.push(diag("warning","Literal posiblemente incorrecto","Python distingue mayúsculas en True, False y None.",n,"Usa True, False o None según corresponda."));if(/^\s+/.test(s)&&!stack.length&&i===0)out.push(diag("warning","Indentación inicial","El archivo comienza con sangría sin un bloque anterior.",n,"Quita la sangría inicial si esta línea está en el nivel principal."));if(/\t/.test(s))out.push(diag("warning","Tabulación detectada","Mezclar tabulaciones y espacios puede causar errores de indentación.",n,"Utiliza cuatro espacios por nivel de indentación."));if(/=\s*$/.test(trim))out.push(diag("error","Asignación incompleta","La asignación no tiene una expresión a la derecha de =.",n,"Completa la asignación, por ejemplo: total = 0."));});balanced(src,"(",")","Paréntesis",out);balanced(src,"[","]","Corchete",out);balanced(src,"{","}","Llave",out);if(!out.length)out.push(diag("success","Sin problemas comunes","No se detectaron problemas con las reglas básicas de Python.",1,"Verifica la indentación y prueba los distintos caminos del programa."));return out}
+function analyzeJava(src){let out=[];if(!src.trim())return [diag("warning","Editor vacío","Escribe código Java antes de analizarlo.",1,"Crea una clase Main para comenzar.")];balanced(src,"{","}","Llave",out);balanced(src,"(",")","Paréntesis",out);balanced(src,"[","]","Corchete",out);const lines=src.split("\n");lines.forEach((s,i)=>{let n=i+1,t=s.trim();if(!t||t.startsWith("//")||t.startsWith("*"))return;if(/\bSystem\.out\.print(ln)?\s+[^(]/.test(t))out.push(diag("error","Llamada print incompleta","System.out.print y println requieren paréntesis.",n,"Usa System.out.println(\"texto\");"));if(/\bpublic\s+class\s+\w+/.test(t)&&!/[{]?\s*$/.test(t))out.push(diag("warning","Revisa la declaración de clase","La declaración de clase debe abrir su bloque con {.",n,"Ejemplo: public class Main {"));if(/\b(?:int|double|float|String|boolean|char)\s+\w+\s*=\s*;/.test(t))out.push(diag("error","Variable sin valor","La declaración tiene = pero no tiene valor.",n,"Asigna un valor compatible con el tipo declarado."));if(/\bSystem\.out\.println\([^;]*\)\s*$/.test(t))out.push(diag("warning","Punto y coma faltante","La instrucción println parece no terminar con punto y coma.",n,"Agrega ; al final de la instrucción."));if(/\bString\s+\w+\s*=\s*'[^']*'/.test(t))out.push(diag("error","Comillas incorrectas para String","En Java las cadenas String utilizan comillas dobles.",n,"Cambia 'texto' por \"texto\"."));});if(!/class\s+\w+/.test(src))out.push(diag("warning","No se encontró una clase","Un programa Java normalmente se organiza dentro de una clase.",1,"Agrega una declaración como public class Main { ... }."));if(!out.length)out.push(diag("success","Sin problemas comunes","No se detectaron problemas con las reglas básicas de Java.",1,"Comprueba que el nombre del archivo coincida con la clase pública."));return out}
+function analyzeCpp(src){let out=[];if(!src.trim())return [diag("warning","Editor vacío","Escribe código C++ antes de analizarlo.",1,"Prueba con #include <iostream> y una función main.")];balanced(src,"{","}","Llave",out);balanced(src,"(",")","Paréntesis",out);balanced(src,"[","]","Corchete",out);const lines=src.split("\n");lines.forEach((s,i)=>{let n=i+1,t=s.trim();if(!t||t.startsWith("//")||t.startsWith("#"))return;if(/\bcout\s*<<\s*[^;{}]+$/.test(t)&&!/[;{}]\s*$/.test(t))out.push(diag("warning","Posible punto y coma faltante","La instrucción cout parece no terminar con ;.",n,"Agrega ; al final de cout."));if(/\b(?:int|double|float|char|string|bool)\s+\w+\s*=\s*;/.test(t))out.push(diag("error","Variable sin valor","La declaración tiene = pero no tiene valor.",n,"Asigna un valor compatible con el tipo."));if(/\bprintf\s*\(/.test(t)&&!/#include\s*<cstdio>/.test(src))out.push(diag("warning","Falta incluir cstdio","Se utiliza printf sin incluir su cabecera habitual.",n,"Agrega #include <cstdio> o utiliza cout con iostream."));if(/\busing\s+namespace\s+std\s*$/.test(t))out.push(diag("warning","Punto y coma faltante","La directiva using namespace std requiere ;.",n,"Escribe using namespace std;"));});if(!/int\s+main\s*\(/.test(src))out.push(diag("warning","No se encontró main","No se detectó el punto de entrada int main().",1,"Agrega int main() { ... return 0; }."));if(!out.length)out.push(diag("success","Sin problemas comunes","No se detectaron problemas con las reglas básicas de C++.",1,"Verifica las cabeceras y compila en tu entorno de desarrollo."));return out}
+function analyzeCSS(src){let out=[];if(!src.trim())return [diag("warning","Editor vacío","Escribe reglas CSS antes de analizarlas.",1,"Prueba con: body { color: white; }")];balanced(src,"{","}","Llave CSS",out);src.split("\n").forEach((s,i)=>{let t=s.trim();if(!t||t.startsWith("/*")||t.startsWith("*")||t.startsWith("//"))return;if(t.includes(":")&&!t.endsWith(";")&&!t.endsWith("{")&&!t.endsWith("}"))out.push(diag("warning","Posible punto y coma faltante","La declaración CSS parece no terminar con ;.",i+1,"Ejemplo: color: white;"));if(/#[0-9a-f]{4,5}(?![0-9a-f])/i.test(t))out.push(diag("warning","Color hexadecimal inusual","El valor hexadecimal parece tener una cantidad de dígitos poco habitual.",i+1,"Usa #RGB, #RRGGBB o #RRGGBBAA."))});if(!out.length)out.push(diag("success","Sin problemas comunes","No se detectaron problemas CSS básicos.",1,"Comprueba también la cascada y la compatibilidad visual."));return out}
+function analyzeHTML(src){if(!/<[a-z][^>]*>/i.test(src)&&/[.#]?[\w-]+\s*\{/.test(src))return analyzeCSS(src);let out=[];if(!src.trim())return [diag("warning","Editor vacío","Escribe estructura HTML antes de analizarla.",1,"Comienza con <!doctype html>")];const checks=[["html","Falta etiqueta html","Incluye <html lang=\"es\"> para definir el documento."],["head","Falta head","Agrega <head> para los metadatos del documento."],["body","Falta body","Agrega <body> para el contenido visible."],["title","Falta title","Incluye <title> dentro de head."]];checks.forEach(([tag,title,suggestion])=>{if(!new RegExp(`<${tag}\\b`,"i").test(src))out.push(diag("warning",title,`No se encontró la etiqueta <${tag}>.`,1,suggestion))});const opens=[...src.matchAll(/<([a-z][\w-]*)\b(?![^>]*\/)[^>]*>/gi)].filter(m=>!["meta","link","img","br","hr","input","area","base","embed","source","track","wbr"].includes(m[1].toLowerCase()));const voids=["meta","link","img","br","hr","input","area","base","embed","source","track","wbr"];let stack=[];for(const m of src.matchAll(/<\/?([a-z][\w-]*)\b[^>]*>/gi)){const tag=m[1].toLowerCase(),closing=m[0].startsWith("</");if(voids.includes(tag))continue;if(!closing)stack.push({tag,index:m.index});else if(stack.length&&stack[stack.length-1].tag===tag)stack.pop();else if(!stack.some(x=>x.tag===tag))out.push(diag("warning",`Cierre inesperado </${tag}>`,`No se encontró una apertura correspondiente para ${tag}.`,lineOf(src,m.index),`Revisa el orden de apertura y cierre de <${tag}>.`));else{while(stack.length&&stack[stack.length-1].tag!==tag)stack.pop();stack.pop()}}if(stack.length){let x=stack[stack.length-1];out.push(diag("warning",`Etiqueta <${x.tag}> sin cerrar`,`No se encontró </${x.tag}>.`,lineOf(src,x.index),`Agrega </${x.tag}> después de su contenido.`))}if(!out.length)out.push(diag("success","Estructura básica correcta","No se encontraron problemas comunes en la estructura HTML.",1,"Valida también los atributos y la accesibilidad de los elementos."));return out}
+function analyze(src,tech){if(tech==="JavaScript")return analyzeJS(src);if(tech==="Python")return analyzePython(src);if(tech==="Java")return analyzeJava(src);if(tech==="C++")return analyzeCpp(src);return analyzeHTML(src)}
+function renderDiagnostics(items,container){container.innerHTML=items.map(d=>`<article class="diagnostic ${d.level}"><div class="diagnostic-top"><span class="severity">${d.level==="error"?"ERROR":d.level==="warning"?"ADVERTENCIA":"OK"}</span><span class="line-number">Línea ${d.line||1}</span></div><h4>${esc(d.title)}</h4><p>${esc(d.detail)}</p><code>Sugerencia: ${esc(d.suggestion)}</code></article>`).join("")}
+$("#tutorLanguage").addEventListener("change",()=>{const t=$("#tutorLanguage").value;$("#codeEditor").value=starter(t);write(STORE.tutor,{tech:t,code:$("#codeEditor").value});$("#codeOutput").innerHTML=empty("Lenguaje cambiado. Analiza el nuevo código cuando estés listo.")});
+$("#codeEditor").addEventListener("input",()=>write(STORE.tutor,{tech:$("#tutorLanguage").value,code:$("#codeEditor").value}));
+$("#checkCode").addEventListener("click",()=>{renderDiagnostics(analyze($("#codeEditor").value,$("#tutorLanguage").value),$("#codeOutput"));record(`Analizaste código ${$("#tutorLanguage").value}`)});
+$("#clearCode").addEventListener("click",()=>{$("#codeEditor").value="";write(STORE.tutor,{tech:$("#tutorLanguage").value,code:""});$("#codeOutput").innerHTML=empty("Editor limpio.")});
+const savedTutor=read(STORE.tutor,null);if(savedTutor&&typeof savedTutor==="object"){$("#tutorLanguage").value=techs.includes(savedTutor.tech)?savedTutor.tech:"JavaScript";$("#codeEditor").value=savedTutor.code||starter($("#tutorLanguage").value)}else if(typeof savedTutor==="string")$("#codeEditor").value=savedTutor;else $("#codeEditor").value=starter("JavaScript");
 
-function inspectJavaScript(source) {
-  if(!source.trim())return ["El editor está vacío."];
-  try{new Function(source);return ["✓ No se detectaron errores de sintaxis. Esto no garantiza que el programa esté libre de errores lógicos."];}
-  catch(error){return [`Error de sintaxis: ${error.message}`];}
-}
-$("#runTutorCode").addEventListener("click",()=>executeJavaScript($("#codeEditor").value,$("#codeOutput"),$("#tutorStatus")));
-$("#checkCode").addEventListener("click",()=>{
-  const result=inspectJavaScript($("#codeEditor").value);
-  $("#codeOutput").textContent=result.join("\n");
-  $("#codeOutput").style.color=result[0].startsWith("✓")?"var(--green)":"var(--orange)";
-  $("#tutorStatus").textContent=result[0].startsWith("✓")?"Revisión terminada":"Revisar código";
-  record("Revisaste código en Code Tutor");
-});
-$("#codeEditor").addEventListener("input",()=>write(STORE.tutor,$("#codeEditor").value));
-const savedTutor=read(STORE.tutor,null);if(savedTutor!==null)$("#codeEditor").value=savedTutor;
-$("#clearCode").addEventListener("click",()=>{
-  $("#codeEditor").value="";write(STORE.tutor,"");$("#codeOutput").textContent="Editor limpio." ;$("#tutorStatus").textContent="Lista";
-});
+/* Academy: 4 rutas x 4 lecciones, contenido y progreso individual. */
+const courses={
+java:{name:"Fundamentos de Java",tag:"JAVA",desc:"Variables, decisiones, ciclos y orientación a objetos.",lessons:[
+["Variables y tipos de datos","Una variable reserva un espacio para guardar información. En Java se declara el tipo antes del nombre.","int edad = 20;\nString nombre = \"Ana\";\ndouble promedio = 9.5;","Declara una variable entera llamada puntos con valor 100.","int puntos = 100;"],
+["Condicionales if / else","Permiten ejecutar instrucciones diferentes según una condición. La condición debe producir true o false.","if (edad >= 18) {\n    System.out.println(\"Mayor de edad\");\n} else {\n    System.out.println(\"Menor de edad\");\n}","Completa una condición que compruebe si temperatura es mayor que 30.","if (temperatura > 30) {\n    System.out.println(\"Hace calor\");\n}"],
+["Ciclos for y while","Los ciclos repiten un bloque. for suele utilizarse cuando conoces el número de repeticiones; while depende de una condición.","for (int i = 1; i <= 5; i++) {\n    System.out.println(i);\n}","Escribe un ciclo for que recorra del 0 al 4.","for (int i = 0; i < 5; i++) {\n    System.out.println(i);\n}"],
+["Clases y objetos","Una clase describe atributos y métodos. Un objeto es una instancia creada a partir de esa clase.","class Persona {\n    String nombre;\n    void saludar() {\n        System.out.println(\"Hola \" + nombre);\n    }\n}","¿Qué palabra se utiliza para crear una instancia?","new"]]},
+python:{name:"Python desde cero",tag:"PYTHON",desc:"Sintaxis, decisiones, colecciones y funciones.",lessons:[
+["Variables e impresión","Python asigna tipos de forma dinámica. print() muestra valores en pantalla.","nombre = \"Ana\"\nedad = 20\nprint(nombre, edad)","Crea una variable ciudad con el texto Celaya.","ciudad = \"Celaya\""],
+["Condicionales","if, elif y else permiten tomar decisiones. La indentación define qué instrucciones pertenecen a cada bloque.","if edad >= 18:\n    print(\"Mayor de edad\")\nelse:\n    print(\"Menor de edad\")","Escribe una condición que compruebe si saldo es mayor que cero.","if saldo > 0:\n    print(\"Saldo disponible\")"],
+["Listas y diccionarios","Las listas guardan elementos ordenados. Los diccionarios relacionan claves con valores.","frutas = [\"pera\", \"uva\"]\npersona = {\"nombre\": \"Ana\"}\nprint(frutas[0])\nprint(persona[\"nombre\"])","Crea una lista llamada materias con Química y Programación.","materias = [\"Química\", \"Programación\"]"],
+["Funciones","Una función agrupa instrucciones reutilizables. Puede recibir parámetros y devolver un resultado con return.","def sumar(a, b):\n    return a + b\n\nprint(sumar(3, 4))","Define una función multiplicar que reciba a y b y devuelva su producto.","def multiplicar(a, b):\n    return a * b"]]},
+web:{name:"Desarrollo web",tag:"WEB",desc:"HTML, CSS, JavaScript y eventos del navegador.",lessons:[
+["Estructura HTML","HTML organiza el contenido con etiquetas. Una página básica utiliza html, head y body.","<!doctype html>\n<html lang=\"es\">\n<head><title>Mi página</title></head>\n<body><h1>Hola</h1></body>\n</html>","¿Qué etiqueta representa el encabezado principal?","<h1>Mi título</h1>"],
+["Selectores CSS","CSS define la presentación. Los selectores permiten elegir elementos por etiqueta, clase o identificador.","h1 { color: rebeccapurple; }\n.card { padding: 16px; }\n#principal { margin: auto; }","Escribe una regla para que la clase boton tenga fondo azul.",".boton { background: blue; }"],
+["Variables y funciones JS","JavaScript agrega comportamiento. const declara una referencia que no se reasigna; let permite reasignarla.","const saludo = nombre => `Hola ${nombre}`;\nconsole.log(saludo(\"Ana\"));","Declara una constante llamada total con valor 50.","const total = 50;"],
+["Eventos del navegador","Los eventos permiten responder a clics, escritura y otras acciones del usuario.","document.querySelector(\"button\")\n  .addEventListener(\"click\", () => {\n    alert(\"Hola\");\n  });","¿Qué evento se utiliza normalmente para detectar un clic?","click"]]},
+cpp:{name:"Programación en C++",tag:"C++",desc:"Tipos, entrada y salida, ciclos y funciones.",lessons:[
+["Tipos de datos","C++ utiliza tipos estáticos. Cada variable se declara con un tipo como int, double, char o bool.","int edad = 20;\ndouble precio = 19.5;\nstring nombre = \"Ana\";","Declara una variable double llamada altura con valor 1.65.","double altura = 1.65;"],
+["Entrada y salida","iostream permite leer datos con cin y mostrar resultados con cout.","#include <iostream>\nusing namespace std;\nint main() {\n    int edad;\n    cin >> edad;\n    cout << edad << endl;\n}","¿Qué operador se usa con cout para enviar información?","<<"],
+["Condicionales y ciclos","if toma decisiones. for, while y do-while repiten instrucciones según una condición.","for (int i = 0; i < 5; i++) {\n    cout << i << endl;\n}","Escribe una condición que revise si numero es igual a 10.","if (numero == 10) {\n    cout << \"Diez\";\n}"],
+["Funciones y arreglos","Las funciones encapsulan tareas. Los arreglos almacenan varios elementos del mismo tipo.","int sumar(int a, int b) {\n    return a + b;\n}\nint valores[3] = {1, 2, 3};","Declara un arreglo de tres enteros llamado datos.","int datos[3] = {1, 2, 3};"]]}
+};
+let activeCourse="java",activeLesson=0;
+function renderAcademy(){const keys=Object.keys(courses);$("#courseList").innerHTML=keys.map(k=>{let done=courses[k].lessons.filter((_,i)=>lessonProgress.includes(`${k}:${i}`)).length;return `<article class="course-card"><span class="tag ${k==="java"?"purple":k==="python"?"green":k==="web"?"blue":"orange"}">${courses[k].tag}</span><h2>${courses[k].name}</h2><p>${courses[k].desc}</p><ul>${courses[k].lessons.map((l,i)=>`<li><button class="lesson-link" data-course-open="${k}" data-lesson-index="${i}">${i+1}. ${esc(l[0])}</button></li>`).join("")}</ul><button class="button secondary" data-course="${k}">${completedCourses.includes(k)?"Ruta completada ✓":"Marcar ruta completada"}</button><small>${done}/4 lecciones completadas</small></article>`}).join("");updateAcademyProgress()}
+function updateAcademyProgress(){const total=16,done=lessonProgress.length,pct=Math.round(done/total*100);$("#academyProgressNumber").textContent=`${pct}%`;$("#academyProgressBar").style.width=`${pct}%`;$("#academyProgressText").textContent=`${done} de ${total} lecciones completadas`;$("#statCompletedLessons").textContent=done}
+function showLesson(course,index){activeCourse=course;activeLesson=index;const l=courses[course].lessons[index],isDone=lessonProgress.includes(`${course}:${index}`);$("#lessonView").innerHTML=`<p class="eyebrow">${courses[course].tag} · LECCIÓN ${index+1} DE 4</p><h2>${esc(l[0])}</h2><p>${esc(l[1])}</p><h3>Ejemplo</h3><pre>${esc(l[2])}</pre><div class="exercise-box"><b>Ejercicio práctico</b><p>${esc(l[3])}</p><label>Tu respuesta<textarea id="lessonAnswer" rows="3" placeholder="Escribe tu solución...">${esc(read("devlog_answer_"+course+"_"+index,""))}</textarea></label><div class="lesson-actions"><button class="button secondary" id="saveLessonAnswer">Guardar respuesta</button><button class="button primary" id="completeLesson">${isDone?"Completada ✓":"Marcar como completada"}</button></div></div>`;$("#saveLessonAnswer").addEventListener("click",()=>{write("devlog_answer_"+course+"_"+index,$("#lessonAnswer").value);toast("Respuesta guardada.")});$("#completeLesson").addEventListener("click",()=>{const key=`${course}:${index}`;if(!lessonProgress.includes(key))lessonProgress.push(key);if(!write(STORE.lessonProgress,lessonProgress))return;updateAcademyProgress();renderAcademy();showLesson(course,index);renderDashboard();record(`Completaste ${l[0]}`);toast("Lección completada.")})}
+$("#courseList").addEventListener("click",e=>{const lesson=e.target.closest("[data-course-open]"),route=e.target.closest("[data-course]");if(lesson){showLesson(lesson.dataset.courseOpen,Number(lesson.dataset.lessonIndex));return}if(route){const k=route.dataset.course;completedCourses=completedCourses.includes(k)?completedCourses.filter(x=>x!==k):[...completedCourses,k];write(STORE.lessons,completedCourses);renderAcademy();renderDashboard();record(`Actualizaste ruta ${courses[k].name}`)}});
+/* Spotify embed validado por dominio y tipo de recurso. */
+function spotifyEmbed(raw){try{const u=new URL(raw);if(!["open.spotify.com","www.open.spotify.com"].includes(u.hostname))return null;const p=u.pathname.split("/").filter(Boolean);if(p[0]==="embed")p.shift();if(!["track","album","playlist","episode","show"].includes(p[0])||!/^[a-zA-Z0-9]+$/.test(p[1]||""))return null;return `https://open.spotify.com/embed/${p[0]}/${p[1]}`}catch{return null}}
+function renderSpotify(url){const box=$("#spotifyPlayer");if(!url){box.innerHTML=empty("Tu reproductor aparecerá aquí.");return}const f=document.createElement("iframe");f.src=url;f.title="Reproductor de Spotify";f.loading="lazy";f.allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture";f.allowFullscreen=true;box.replaceChildren(f)}
+$("#spotifyForm").addEventListener("submit",e=>{e.preventDefault();const u=spotifyEmbed($("#spotifyUrl").value.trim());if(!u)return toast("Introduce un enlace válido de Spotify.");spotify=u;if(write(STORE.spotify,spotify)){renderSpotify(spotify);record("Actualizaste Spotify");toast("Reproductor actualizado.")}});
 
-const courseIds=["java","python","web","cpp"];
-function renderAcademy(){
-  courseIds.forEach(course=>{
-    const complete=lessons.includes(course);
-    const button=$(`[data-course="${course}"]`),status=$(`#progress-${course}`);
-    button.textContent=complete?"Marcar como pendiente":"Marcar completado";
-    status.textContent=complete?"✓ Ruta completada":"Pendiente";
-    status.style.color=complete?"var(--green)":"var(--muted)";
-  });
-}
-$("#courseList").addEventListener("click",event=>{
-  const button=event.target.closest("[data-course]");if(!button)return;
-  const course=button.dataset.course;
-  lessons=lessons.includes(course)?lessons.filter(item=>item!==course):[...lessons,course];
-  if(!write(STORE.lessons,lessons))return;
-  record(`Actualizaste Academy: ${course}`);renderAcademy();renderDashboard();
-});
+/* Bitácora CRUD */
+function renderNotes(){$("#journalList").innerHTML=notes.length?notes.map(n=>`<article class="note-card"><span class="note-date">${esc(n.date)}</span><h3>${esc(n.title)}</h3><p>${esc(n.content)}</p><div class="note-actions"><button class="button secondary" data-edit-note="${esc(n.id)}">Editar</button><button class="delete-button" data-delete-note="${esc(n.id)}">Eliminar</button></div></article>`).join(""):empty("Todavía no tienes entradas en tu bitácora.")}
+function resetNote(){editingNoteId=null;$("#noteForm").reset();$("#noteFormTitle").textContent="Nueva entrada";$("#saveNoteButton").textContent="Guardar entrada";$("#cancelNoteEdit").hidden=true}
+$("#noteForm").addEventListener("submit",e=>{e.preventDefault();const title=$("#noteTitle").value.trim(),content=$("#noteContent").value.trim();if(!title||!content)return;if(editingNoteId){const n=notes.find(x=>x.id===editingNoteId);if(n){n.title=title;n.content=content;n.date=now()}}else notes.unshift({id:uid(),title,content,date:now()});if(!write(STORE.notes,notes))return;record(`${editingNoteId?"Editaste":"Guardaste"} una entrada: ${title}`);resetNote();renderNotes();renderDashboard();toast("Entrada guardada.")});
+$("#cancelNoteEdit").addEventListener("click",resetNote);
+$("#journalList").addEventListener("click",e=>{const edit=e.target.closest("[data-edit-note]"),del=e.target.closest("[data-delete-note]");if(edit){const n=notes.find(x=>String(x.id)===edit.dataset.editNote);if(!n)return;editingNoteId=n.id;$("#noteTitle").value=n.title;$("#noteContent").value=n.content;$("#noteFormTitle").textContent="Editar entrada";$("#saveNoteButton").textContent="Actualizar entrada";$("#cancelNoteEdit").hidden=false;$("#noteForm").scrollIntoView({behavior:"smooth",block:"center"})}if(del){const n=notes.find(x=>String(x.id)===del.dataset.deleteNote);if(!n||!confirm(`¿Eliminar la entrada "${n.title}"?`))return;notes=notes.filter(x=>x.id!==n.id);if(!write(STORE.notes,notes))return;renderNotes();renderDashboard();record(`Eliminaste una entrada: ${n.title}`);toast("Entrada eliminada.")}});
 
-function spotifyEmbed(raw){
-  try{
-    const url=new URL(raw);
-    if(url.hostname!=="open.spotify.com"&&url.hostname!=="www.open.spotify.com")return null;
-    const parts=url.pathname.split("/").filter(Boolean);
-    if(parts[0]==="embed")parts.shift();
-    if(!["track","album","playlist","episode","show"].includes(parts[0])||! /^[a-zA-Z0-9]+$/.test(parts[1]||""))return null;
-    return `https://open.spotify.com/embed/${parts[0]}/${parts[1]}`;
-  }catch{return null;}
-}
-function renderSpotify(url){
-  const box=$("#spotifyPlayer");
-  if(!url){box.innerHTML=empty("Tu reproductor aparecerá aquí.");return;}
-  const frame=document.createElement("iframe");
-  frame.src=url;frame.title="Reproductor de Spotify";frame.loading="lazy";
-  frame.allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture";frame.allowFullscreen=true;
-  box.replaceChildren(frame);
-}
-$("#spotifyForm").addEventListener("submit",event=>{
-  event.preventDefault();const embed=spotifyEmbed($("#spotifyUrl").value.trim());
-  if(!embed){toast("Introduce un enlace válido de Spotify.");return;}
-  spotify=embed;if(write(STORE.spotify,spotify)){renderSpotify(spotify);record("Actualizaste Spotify");}
-});
-
-function renderNotes(){
-  $("#journalList").innerHTML=notes.length?notes.map(note=>`
-    <article class="note-card"><span class="note-date">${escapeHTML(note.date)}</span><h3>${escapeHTML(note.title)}</h3>
-      <p>${escapeHTML(note.content)}</p><div class="note-actions">
-      <button class="button secondary" data-edit-note="${escapeHTML(note.id)}">Editar</button>
-      <button class="delete-button" data-delete-note="${escapeHTML(note.id)}">Eliminar</button></div>
-    </article>`).join(""):empty("Todavía no tienes entradas en tu bitácora.");
-}
-function resetNoteForm(){
-  editingNoteId=null;$("#noteForm").reset();$("#noteFormTitle").textContent="Nueva entrada";
-  $("#saveNoteButton").textContent="Guardar entrada";$("#cancelNoteEdit").hidden=true;
-}
-$("#noteForm").addEventListener("submit",event=>{
-  event.preventDefault();
-  const title=$("#noteTitle").value.trim(),content=$("#noteContent").value.trim();
-  if(!title||!content)return;
-  if(editingNoteId){
-    const note=notes.find(item=>item.id===editingNoteId);if(note){note.title=title;note.content=content;note.date=now();}
-    record(`Editaste una entrada: ${title}`);
-  }else{
-    notes.unshift({id:uid(),title,content,date:now()});record(`Guardaste una entrada: ${title}`);
-  }
-  if(!write(STORE.notes,notes))return;
-  resetNoteForm();renderNotes();renderDashboard();toast("Entrada guardada.");
-});
-$("#cancelNoteEdit").addEventListener("click",resetNoteForm);
-$("#journalList").addEventListener("click",event=>{
-  const edit=event.target.closest("[data-edit-note]"),remove=event.target.closest("[data-delete-note]");
-  if(edit){
-    const note=notes.find(item=>item.id===edit.dataset.editNote);if(!note)return;
-    editingNoteId=note.id;$("#noteTitle").value=note.title;$("#noteContent").value=note.content;
-    $("#noteFormTitle").textContent="Editar entrada";$("#saveNoteButton").textContent="Actualizar entrada";$("#cancelNoteEdit").hidden=false;
-    $("#noteForm").scrollIntoView({behavior:"smooth",block:"center"});
-  }
-  if(remove){
-    const note=notes.find(item=>item.id===remove.dataset.deleteNote);
-    if(!note||!confirm(`¿Eliminar la entrada "${note.title}"?`))return;
-    notes=notes.filter(item=>item.id!==note.id);
-    if(!write(STORE.notes,notes))return;
-    record(`Eliminaste una entrada: ${note.title}`);renderNotes();renderDashboard();toast("Entrada eliminada.");
-  }
-});
-
-function init(){
-  renderProjects();renderAcademy();renderNotes();renderDashboard();renderSpotify(spotify);
-  console.info("DEVLOG 2.1 listo.");
-}
+function init(){renderProjects();renderAcademy();renderNotes();renderDashboard();renderSpotify(spotify)}
 init();
